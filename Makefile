@@ -9,7 +9,8 @@ build:
 	go build -o $(BINARY_NAME) $(MODULE)/cmd/xxd
 
 install: build
-	cp $(BINARY_NAME) /usr/local/bin/
+	mkdir -p $(HOME)/.local/bin
+	cp $(BINARY_NAME) $(HOME)/.local/bin/
 
 clean:
 	rm -f $(BINARY_NAME)
