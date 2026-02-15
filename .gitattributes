@@ -1,0 +1,2 @@
+doc/* linguist-documentation
+cmd/xxd/main.go linguist-detectable
