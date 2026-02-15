@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -122,6 +123,29 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  -s seek  seek\n  -u       upper case\n  -v       version\n")
 }
 
+func calcCols(o *options) int {
+	tw := getTermWidth()
+	if tw <= 0 {
+		return 16
+	}
+	c := 1
+	for {
+		w := 12 + 3*c + (c-1)/o.group
+		if w > tw {
+			c--
+			break
+		}
+		if c >= 256 {
+			break
+		}
+		c++
+	}
+	if c <= 0 {
+		return 1
+	}
+	return c
+}
+
 func parseArgs(args []string) (*options, error) {
 	o := &options{cols: 0, group: -1, length: -1, colour: colourAuto}
 	for i := 1; i < len(args); i++ {
@@ -232,33 +256,12 @@ func parseArgs(args []string) (*options, error) {
 		d := map[hexType]int{hexBits: 1, hexNormal: 2, hexLittleEndian: 4}
 		o.group = d[o.hextype]
 		if o.group == 0 {
-			o.group = 1 // Avoid div by zero
+			o.group = 1
 		}
 	}
 
-	if !o.colsgiven {
-		tw := getTermWidth()
-		if tw > 0 && o.hextype != hexCInclude && o.hextype != hexPostScript {
-			// Formula: tw = 12 + 3*cols + (cols-1)/group
-			// Simplified: cols = (tw - 12) / (3 + 1/group)
-			// For group=2: cols = (2*tw - 23) / 7
-			// Let's use a generic loop to find max cols
-			c := 1
-			for {
-				w := 12 + 3*c + (c-1)/o.group
-				if w > tw {
-					c--
-					break
-				}
-				if c >= 256 {
-					break
-				}
-				c++
-			}
-			if c > 0 {
-				o.cols = c
-			}
-		}
+	if !o.colsgiven && o.hextype != hexCInclude && o.hextype != hexPostScript {
+		o.cols = calcCols(o)
 	}
 
 	if o.cols == 0 {
@@ -367,11 +370,25 @@ func dump(r io.Reader, w *bufio.Writer, o *options) error {
 		hx = "0123456789ABCDEF"
 	}
 	clr := useCol(o, w)
-	b := make([]byte, o.cols)
+	
+	// Handle window resize
+	winch := make(chan os.Signal, 1)
+	if !o.colsgiven && o.hextype != hexCInclude && o.hextype != hexPostScript {
+		signal.Notify(winch, syscall.SIGWINCH)
+	}
+
 	var total int64
 	var zseen int
 	var zline string
 	for {
+		if !o.colsgiven {
+			select {
+			case <-winch:
+				o.cols = calcCols(o)
+			default:
+			}
+		}
+		b := make([]byte, o.cols)
 		n, err := io.ReadFull(r, b)
 		if n == 0 {
 			break
