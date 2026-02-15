@@ -1,253 +1,45 @@
-﻿ckormanyos/xxd
-==================
+# xxd
 
-<p align="center">
-    <a href="https://github.com/ckormanyos/xxd/actions">
-        <img src="https://github.com/ckormanyos/xxd/actions/workflows/xxd.yml/badge.svg" alt="Build Status"></a>
-    <a href="https://github.com/ckormanyos/xxd/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc">
-        <img src="https://custom-icon-badges.herokuapp.com/github/issues-raw/ckormanyos/xxd?logo=github" alt="Issues" /></a>
-    <a href="https://sonarcloud.io/summary/new_code?id=ckormanyos_xxd">
-        <img src="https://sonarcloud.io/api/project_badges/measure?project=ckormanyos_xxd&metric=alert_status" alt="Quality Gate Status"></a>
-    <a href="https://codecov.io/gh/ckormanyos/xxd" > 
-        <img src="https://codecov.io/gh/ckormanyos/xxd/graph/badge.svg?token=EHGEJLSMSL"/></a>
-    <a href="https://github.com/ckormanyos/xxd/blob/master/LICENSE">
-        <img src="https://img.shields.io/badge/license-GPL%202.0-blue.svg" alt="GNU GENERAL PUBLIC LICENSE 2.0"></a>
-    <a href="https://godbolt.org/z/xPxzaMz79" alt="godbolt">
-        <img src="https://img.shields.io/badge/try%20it%20on-godbolt-green" /></a>
-</p>
+A hex-dump utility rewritten in Go, following Ken Thompson's philosophy of simplicity and efficiency.
 
-The version of `xxd` in `ckormanyos/xxd` has been adapted
-for MSVC/GCC/clang **standalone build**.
+## Features
 
-This is an unofficial adaption of the well-known hex-dump-type utility `xxd`.
-See the [vim-project](https://www.vim.org) for the official `xxd`, which
-is a small sub-component of `vim`.
-
-## Releases and build artifacts
-
-Occasional releases and build artifacts consisting of the executable `xxd` program
-are created for Windows, LINUX and MacOS . These can be readily found
-on the repo front page and in CI workflow-run download-areas
-for immediate client use.
-
-Using released or CI-built artifacts can be convenient when you
-do not actually want to nor need to manually build `ckormanyos/xxd`.
+- Normal, bits, little-endian, postscript, and C-include dump styles.
+- Reversal operation (convert hexdump back to binary).
+- Colour output support (printable vs non-printable characters).
+- British spelling for all flags and messages.
+- Efficient I/O using `bufio`.
 
 ## Build
 
-Building `ckormanyos/xxd` (if needed) is straightforward.
-
-The source code in `ckormanyos/xxd` has been adapted
-for standalone build on most common operating systems.
-
-The source code of `ckormanyos/xxd` is written in the C language.
-It is compatible with language standards C99, 11, 17, 23 and beyond.
-
-### Build on Windows with MSVC
-
-On Windows with MSVC simply build `ckormanyos/xxd` with the following.
-
-  - Open the `xxd.sln` workspace.
-  - Rebuild `Release` (i.e., for the `x64` project configuration).
-  - After building, find the executable `xxd.exe` in the expected output directory.
-
-### Build on the LINUX command line
-
-On LINUX it is straightforward to build `ckormanyos/xxd` on the command line.
-
-  - Switch to the `xxd`directory.
-  - Build (for instance with GCC) using an easy command, as shown below.
-  - This compiles `src/xxd.c` to `xxd`.
-
-In other words,
+Building `xxd` requires Go 1.16 or later.
 
 ```sh
-cd xxd
-g++ -x c -std=c17 -O2 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow src/xxd.c -o xxd
+go build -o xxd github.com/euxaristia/xxd/cmd/xxd
 ```
-
-### Build on the MacOS command line
-
-When on MacOS, it is also easy to build `ckormanyos/xxd` on the command line.
-
-  - Switch to the `xxd`directory.
-  - Build (for instance with clang) using an easy command, as shown below.
-  - This compiles `src/xxd.c` to `xxd`.
-
-In other words,
-
-```sh
-cd xxd
-clang++ -x c -std=c17 -O2 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Wshadow src/xxd.c -o xxd
-```
-
-### Platform-independent build with CMake (and ninja)
-
-Building `ckormanyos/xxd` on the command line is also supported
-with platform-independent CMake (and ninja).
-This has been motivated by [issue 16](https://github.com/ckormanyos/xxd/issues/16).
-
-```sh
-cd xxd
-mkdir build
-cd build
-cmake .. -G Ninja && ninja
-```
-
-## Adaptions
-
-The following adaptions have been undertaken.
-
-  - Create an MSVC `*.sln` workspace and associated project configuration.
-  - Disregard (i.e., delete and do not use) the configuration header `config.h.in`.
-  - Replace the compiler switch `WIN32` with MSVC's standard `_WIN32`.
-  - Run the `xxd.c`/`config.h` files through the [Artistic Style](http://astyle.sourceforge.net/astyle.html) automatic code formatter, using a version of _AStyle_ from somewhere around 2015.
-  - Handle Level-3 warnings found in MSVC.
-  - Handle GCC warnings from `-Wall`, `-Wextra`, `-Wpedantic`, `-Wconversion`, `-Wsign-conversion` and `-Wshadow`.
-  - Add CI consisting of MSVC/GCC/clang builds and a handful of straightforward test cases.
-  - Upload build artifacts in CI for `xxd-x86_64-linux-gnu` and `xxd-win64-msvc`, see also discussion in [issue 11](https://github.com/ckormanyos/xxd/issues/11).
-  - Resolve code-technical issues (and/or disable some) found via quality checks performed with CodeSonar, as described in [issue 15](https://github.com/ckormanyos/xxd/issues/15) and [issue 23](https://github.com/ckormanyos/xxd/issues/23).
-  - Implementation of the `-n` flag, as seen in [vim/vim@83e1180](https://github.com/vim/vim/commit/83e11800cc3775de3135ac7d823137c8c1e87fa1) and added in [PR 45](https://github.com/ckormanyos/xxd/pull/45).
-  - Use `fgetc()`/`fputc()` instead of `getc()`/`putc()`. See also [PR 50](https://github.com/ckormanyos/xxd/pull/50) which fixes a bug where sometimes line feeds `0x0A` (i.e., `\n`) get an additional (unexpected) carriage return `0x0D` (i.e., `\r`) - or sometimes even two - with them on `Win*` when reading/writing files.
-  - Employ shell scripts in combination with `gcov`, `lcov` (and locally) `htmlgen` to obtain [code coverage results](https://app.codecov.io/gh/ckormanyos/xxd) in CI for this repo.
-
 
 ## Usage
 
-The program manual at the [`xxd(1)` - Linux man page](https://linux.die.net/man/1/xxd)
-states:
-
-`xxd` - make a hexdump or do the reverse.
-
-It can do nearly everything hexdump can and moreover perform
-the reversal translation of hex-like text back to binary representation.
-Like [uuencode](https://linux.die.net/man/1/uuencode)
-and [uudecode](https://linux.die.net/man/1/uudecode)
-it allows the transmission of binary data in a `mail-safe`
-ASCII representation, but has the advantage of decoding to standard output.
-Moreover, it can be used to perform binary file patching.
-
-### Examples
-
-Print everything but the first three lines (hex 0x30 bytes) of file.
-
-```sh
-% xxd -s 0x30 file
+```
+Usage: xxd [options] [infile [outfile]]
+Options:
+  -a       autoskip
+  -b       bits
+  -c cols  columns
+  -e       little-endian
+  -g bytes group size
+  -i       C include
+  -l len   length
+  -o off   offset
+  -ps      postscript
+  -r       revert
+  -R when  colour (never, always, auto)
+  -s seek  seek
+  -u       upper case
+  -v       version
 ```
 
-Print 3 lines (hex 0x30 bytes) from the end of file.
+## License
 
-```sh
-% xxd -s -0x30 file
-```
-
-Print 120 bytes as continuous hexdump with 20 octets per line.
-
-```sh
-% xxd -l 120 -ps -c 20 xxd.1
-2e54482058584420312022417567757374203139
-39362220224d616e75616c207061676520666f72
-20787864220a2e5c220a2e5c222032317374204d
-617920313939360a2e5c22204d616e2070616765
-20617574686f723a0a2e5c2220202020546f6e79
-204e7567656e74203c746f6e79407363746e7567
-```
-
-Hexdump the first 120 bytes of this man page with 12 octets per line.
-
-```sh
-% xxd -l 120 -c 12 xxd.1
-0000000: 2e54 4820 5858 4420 3120 2241  .TH XXD 1 "A
-000000c: 7567 7573 7420 3139 3936 2220  ugust 1996"
-0000018: 224d 616e 7561 6c20 7061 6765  "Manual page
-0000024: 2066 6f72 2078 7864 220a 2e5c   for xxd"..\
-0000030: 220a 2e5c 2220 3231 7374 204d  "..\" 21st M
-000003c: 6179 2031 3939 360a 2e5c 2220  ay 1996..\"
-0000048: 4d61 6e20 7061 6765 2061 7574  Man page aut
-0000054: 686f 723a 0a2e 5c22 2020 2020  hor:..\"
-0000060: 546f 6e79 204e 7567 656e 7420  Tony Nugent
-000006c: 3c74 6f6e 7940 7363 746e 7567  <tony@sctnug
-```
-
-Display just the date from the file xxd.1
-
-```sh
-% xxd -s 0x36 -l 13 -c 13 xxd.1
-0000036: 3231 7374 204d 6179 2031 3939 36  21st May 1996
-```
-
-Copy input_file to output_file and prepend 100 bytes of value 0x00.
-```sh
-% xxd input_file | xxd -r -s 100 > output_file
-```
-
-Patch the date in the file xxd.1
-
-```sh
-% echo "0000037: 3574 68" | xxd -r - xxd.1
-% xxd -s 0x36 -l 13 -c 13 xxd.1
-0000036: 3235 7468 204d 6179 2031 3939 36  25th May 1996
-```
-
-Create a 65537 byte file with all bytes 0x00, except for the  last  one which is 'A' (hex 0x41).
-
-```sh
-% echo "010000: 41" | xxd -r > file
-```
-
-Hexdump this file with autoskip.
-
-```sh
-% xxd -a -c 12 file
-0000000: 0000 0000 0000 0000 0000 0000  ............
-*
-000fffc: 0000 0000 40                   ....A
-```
-
-Create  a  1  byte  file containing a single 'A' character.  The number
-after '-r -s' adds to the linenumbers found in the file; in effect, the
-leading bytes are suppressed.
-
-```sh
-% echo "010000: 41" | xxd -r -s -0x10000 > file
-```
-
-Read single characters from a serial line
-
-```sh
-% xxd -c1 < /dev/term/b &
-% stty < /dev/term/b -echo -opost -isig -icanon min 1
-% echo -n foo > /dev/term/b
-```
-
-## Additional Details
-
-### Continuous Integration and Testing
-
-Continuous integration (CI) runs with GCC, clang and MSVC with both
-tool-specific builds as well as platform-independent CMake builds.
-CI exercises both building `xxd` as well as running
-several straightforward `xxd` test cases.
-
-A (growing) test suite is present in
-[`xxd_tests.sh`](./.gcov/make/xxd_tests.sh).
-These tests are used in CI to verify the expected functionality and also
-to obtain [code coverage results](https://app.codecov.io/gh/ckormanyos/xxd).
-
-### Origins and Licensing
-
-When searching for the `xxd` utility one finds it distributed as a part of vim-project and its packages.
-This project extracts the code, creates an MSVC solution workspace and provides
-the ability to easily build `xxd` on `Win*` or `*nix`.
-
-The original code was taken from: [vim github repo](https://github.com/vim/vim) on 28-March-2022.
-The simplicity of the code port has been previously established (among other places)
-in [fancer/xxd](https://github.com/fancer/xxd).
-
-The `xxd` code copyrights are left untouched
-except for adding an additional note regarding the MSVC build.
-The license as well as the license declaration are left untouched.
-This original package is licensed by GPL-2.0. This version retains compatibility with the
-licensing of the original utility.
-
-Other code parts (such as continuous integration scripts) are licensed under BSL 1.0.
+Original `xxd` licensed under GPL-2.0. This Go port retains the same compatibility.
+Other parts licensed under BSL 1.0.
