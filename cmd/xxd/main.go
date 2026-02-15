@@ -262,19 +262,29 @@ func run(o *options) error {
 		return revert(in, bw, o)
 	}
 
-	if rs, ok := in.(io.ReadSeeker); ok && (o.seek != 0 || o.negSeek) {
-		wh := io.SeekStart
-		if o.relSeek {
-			wh = io.SeekCurrent
-		} else if o.negSeek {
-			wh = io.SeekEnd
+	if o.seek != 0 || o.negSeek {
+		if rs, ok := in.(io.ReadSeeker); ok {
+			wh := io.SeekStart
+			if o.relSeek {
+				wh = io.SeekCurrent
+			} else if o.negSeek {
+				wh = io.SeekEnd
+			}
+			off := o.seek
+			if o.negSeek && !o.relSeek {
+				off = -off
+			}
+			if _, err := rs.Seek(off, wh); err == nil {
+				goto seekDone
+			}
 		}
-		off := o.seek
-		if o.negSeek && !o.relSeek {
-			off = -off
+		if o.seek > 0 && !o.negSeek {
+			io.CopyN(io.Discard, in, o.seek)
+		} else {
+			return fmt.Errorf("cannot seek")
 		}
-		rs.Seek(off, wh)
 	}
+seekDone:
 
 	switch o.hextype {
 	case hexCInclude:
