@@ -8,7 +8,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"unicode"
+	"unsafe"
 )
 
 type hexType int
@@ -81,6 +83,20 @@ var (
 		0070, 0071, 0372, 0373, 0374, 0375, 0376, 0377,
 	}
 )
+
+func getTermWidth() int {
+	if w, err := strconv.Atoi(os.Getenv("XXD_WIDTH")); err == nil {
+		return w
+	}
+	var sz struct {
+		rows, cols, xpix, ypix uint16
+	}
+	_, _, _ = syscall.Syscall(syscall.SYS_IOCTL,
+		uintptr(os.Stdout.Fd()),
+		uintptr(syscall.TIOCGWINSZ),
+		uintptr(unsafe.Pointer(&sz)))
+	return int(sz.cols)
+}
 
 func main() {
 	opts, err := parseArgs(os.Args)
@@ -211,17 +227,45 @@ func parseArgs(args []string) (*options, error) {
 			}
 		}
 	}
-	if !o.colsgiven || (o.cols == 0 && o.hextype != hexPostScript) {
-		d := map[hexType]int{hexPostScript: 30, hexCInclude: 12, hexBits: 6, hexNormal: 16, hexLittleEndian: 16}
-		o.cols = d[o.hextype]
-	}
+
 	if o.group == -1 {
 		d := map[hexType]int{hexBits: 1, hexNormal: 2, hexLittleEndian: 4}
 		o.group = d[o.hextype]
 		if o.group == 0 {
-			o.group = o.cols
+			o.group = 1 // Avoid div by zero
 		}
 	}
+
+	if !o.colsgiven {
+		tw := getTermWidth()
+		if tw > 0 && o.hextype != hexCInclude && o.hextype != hexPostScript {
+			// Formula: tw = 12 + 3*cols + (cols-1)/group
+			// Simplified: cols = (tw - 12) / (3 + 1/group)
+			// For group=2: cols = (2*tw - 23) / 7
+			// Let's use a generic loop to find max cols
+			c := 1
+			for {
+				w := 12 + 3*c + (c-1)/o.group
+				if w > tw {
+					c--
+					break
+				}
+				if c >= 256 {
+					break
+				}
+				c++
+			}
+			if c > 0 {
+				o.cols = c
+			}
+		}
+	}
+
+	if o.cols == 0 {
+		d := map[hexType]int{hexPostScript: 30, hexCInclude: 12, hexBits: 6, hexNormal: 16, hexLittleEndian: 16}
+		o.cols = d[o.hextype]
+	}
+
 	return o, nil
 }
 
