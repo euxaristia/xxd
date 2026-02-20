@@ -11,7 +11,8 @@ import (
 	"strings"
 	"syscall"
 	"unicode"
-	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
 
 type hexType int
@@ -56,7 +57,7 @@ type options struct {
 }
 
 var (
-	versionStr = "xxd-go 2026-02-15 by Gemini CLI (Ken Thompson's simplicity style)"
+	versionStr = "xxd-go"
 	etoa64     = []byte{
 		0040, 0240, 0241, 0242, 0243, 0244, 0245, 0246,
 		0247, 0250, 0325, 0056, 0074, 0050, 0053, 0174,
@@ -89,14 +90,11 @@ func getTermWidth() int {
 	if w, err := strconv.Atoi(os.Getenv("XXD_WIDTH")); err == nil {
 		return w
 	}
-	var sz struct {
-		rows, cols, xpix, ypix uint16
+	sz, err := unix.IoctlGetWinsize(int(os.Stdout.Fd()), unix.TIOCGWINSZ)
+	if err != nil {
+		return 0
 	}
-	_, _, _ = syscall.Syscall(syscall.SYS_IOCTL,
-		uintptr(os.Stdout.Fd()),
-		uintptr(syscall.TIOCGWINSZ),
-		uintptr(unsafe.Pointer(&sz)))
-	return int(sz.cols)
+	return int(sz.Col)
 }
 
 func main() {
@@ -120,7 +118,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  -a       autoskip\n  -b       bits\n  -c cols  columns\n  -e       little-endian\n")
 	fmt.Fprintf(os.Stderr, "  -g bytes group size\n  -i       C include\n  -l len   length\n  -o off   offset\n")
 	fmt.Fprintf(os.Stderr, "  -ps      postscript\n  -r       revert\n  -R when  colour (never, always, auto)\n")
-	fmt.Fprintf(os.Stderr, "  -s seek  seek\n  -u       upper case\n  -v       version\n")
+	fmt.Fprintf(os.Stderr, "  -s seek  seek\n  -u       upper case\n  -v, --version  version\n")
 }
 
 func calcCols(o *options) int {
@@ -193,7 +191,7 @@ func parseArgs(args []string) (*options, error) {
 			o.decimalOffset = true
 		case p == "r":
 			o.revert = true
-		case p == "v":
+		case p == "v" || p == "version":
 			o.version = true
 		case p == "h":
 			usage()
@@ -370,7 +368,7 @@ func dump(r io.Reader, w *bufio.Writer, o *options) error {
 		hx = "0123456789ABCDEF"
 	}
 	clr := useCol(o, w)
-	
+
 	// Handle window resize
 	winch := make(chan os.Signal, 1)
 	if !o.colsgiven && o.hextype != hexCInclude && o.hextype != hexPostScript {
