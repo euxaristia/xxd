@@ -57,7 +57,7 @@ type options struct {
 }
 
 var (
-	versionStr = "xxd-go"
+	version = "dev"
 	etoa64     = []byte{
 		0040, 0240, 0241, 0242, 0243, 0244, 0245, 0246,
 		0247, 0250, 0325, 0056, 0074, 0050, 0053, 0174,
@@ -104,7 +104,7 @@ func main() {
 		os.Exit(1)
 	}
 	if opts.version {
-		fmt.Fprintln(os.Stderr, versionStr)
+		fmt.Fprintln(os.Stderr, version)
 		os.Exit(0)
 	}
 	if err := run(opts); err != nil {
