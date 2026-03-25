@@ -51,6 +51,7 @@ type options struct {
 	negSeek       bool
 	upper         bool
 	version       bool
+	help          bool
 	infile        string
 	outfile       string
 	colour        colourMode
@@ -58,7 +59,7 @@ type options struct {
 
 var (
 	version = "dev"
-	etoa64     = []byte{
+	etoa64  = []byte{
 		0040, 0240, 0241, 0242, 0243, 0244, 0245, 0246,
 		0247, 0250, 0325, 0056, 0074, 0050, 0053, 0174,
 		0046, 0251, 0252, 0253, 0254, 0255, 0256, 0257,
@@ -98,19 +99,28 @@ func getTermWidth() int {
 }
 
 func main() {
-	opts, err := parseArgs(os.Args)
+	os.Exit(runMain(os.Args))
+}
+
+func runMain(args []string) int {
+	opts, err := parseArgs(args)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "xxd:", err)
-		os.Exit(1)
+		return 1
 	}
 	if opts.version {
 		fmt.Fprintln(os.Stderr, version)
-		os.Exit(0)
+		return 0
+	}
+	if opts.help {
+		usage()
+		return 0
 	}
 	if err := run(opts); err != nil {
 		fmt.Fprintf(os.Stderr, "xxd: %v\n", err)
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 func usage() {
@@ -194,8 +204,7 @@ func parseArgs(args []string) (*options, error) {
 		case p == "v" || p == "version":
 			o.version = true
 		case p == "h":
-			usage()
-			os.Exit(0)
+			o.help = true
 		case strings.HasPrefix(p, "c"):
 			v, err := getVal(p[1:], args, &i)
 			if err != nil {
@@ -247,6 +256,8 @@ func parseArgs(args []string) (*options, error) {
 			default:
 				o.colour = colourAuto
 			}
+		default:
+			return nil, fmt.Errorf("invalid option -- '%s'", p)
 		}
 	}
 
